@@ -1,24 +1,29 @@
 import ballerina/http;
-import ballerina/lang.value;
- 
-service / on new http:Listener(8090) {
- 
-   resource function post iptocountry(http:Caller caller, http:Request request) returns error? {
-       string jsonString = check request.getTextPayload();
-       json jsonObj = check value:fromJsonString(jsonString);
-       string ip = <string> check jsonObj.ip;
-      //  string ip = "134.201.250.155";
-       
-       http:Client httpEndpoint = check new ("http://api.ipstack.com");
-       http:Response getResponse = check httpEndpoint->get("/"+ip+"?access_key=cad8757ee02d0a232060f343a76b71e1");
-  
-       var jsonPayload = check getResponse.getJsonPayload();
-        
-       string country = <string> check jsonPayload.country_name;
-      
-      http:Response response = new;
-        response.statusCode = http:STATUS_OK;
-       response.setJsonPayload  ({"country" : country});
-       check caller->respond(response);
-   }
-};
+import ballerina/io;
+import ballerina/lang.runtime;
+
+# A service representing a network-accessible API
+# bound to port `9090`.
+service / on new http:Listener(9090) {
+
+    # A resource for generating greetings
+    # + name - the input string name
+    # + return - string name with hello message or error
+    resource function get greeting(string name) returns string|error {
+        // Send a response back to the caller.
+        if name is "" {
+            return error("name should not be empty!");
+        }
+        return "Hello, " + name;
+    }
+
+    resource function post testEchoAPI(@http:Payload json jsonObj, http:Caller caller) returns error? {
+       io:println(string:concat("testEchoAPI : ", jsonObj.toJsonString()));
+       http:Response quickResponse = new;
+       quickResponse.setJsonPayload({"status":"success"});
+       quickResponse.statusCode = http:STATUS_OK;
+       // Simulate a slow operation that takes longer than the specified timeout
+       runtime:sleep(2);
+       return caller->respond(quickResponse);
+    }
+}
